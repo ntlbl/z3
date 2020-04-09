@@ -2206,6 +2206,8 @@ namespace smt {
 
     template<typename Ext>
     bool theory_arith<Ext>::assume_eqs_core() {
+        enable_trace("arith");
+        enable_trace("func_interp_bug");
         // See comment in m_liberal_final_check declaration
         if (m_liberal_final_check)
             mutate_assignment();
@@ -2218,26 +2220,33 @@ namespace smt {
         int num       = get_num_vars();
         for (theory_var v = 0; v < num; v++) {
             enode * n        = get_enode(v);
-            TRACE("func_interp_bug", tout << mk_pp(n->get_owner(), get_manager()) << " -> " << m_value[v] << " root #" << n->get_root()->get_owner_id() << " " << is_relevant_and_shared(n) << "\n";);
+            TRACE("func_interp_bug", tout << "v =" <<  v  // mk_pp(n->get_owner(), get_manager()) << " -> " << m_value[v] << " root #" << n->get_root()->get_owner_id() << " " << is_relevant_and_shared(n) <<
+                  << "\n";);
             if (!is_relevant_and_shared(n)) {
                 continue;
             }
             theory_var other = null_theory_var;
             other = m_var_value_table.insert_if_not_there(v);
+            TRACE("func_interp_bug", tout << "other = " << other << "\n";);
             if (other == v) {
                 continue;
             }
             enode * n2 = get_enode(other);
             if (n->get_root() == n2->get_root()) {
-                continue;
+                 TRACE("arith", tout << "same roots\n";);
+                 continue;
             }
-            TRACE("func_interp_bug", tout << "adding to assume_eq queue #" << n->get_owner_id() << " #" << n2->get_owner_id() << "\n";);
+            TRACE("func_interp_bug", tout << "different roots: adding to assume_eq queue #" << n->get_owner_id() << " #" << n2->get_owner_id() << "\n";);
             m_assume_eq_candidates.push_back(std::make_pair(other, v));
             result = true;
         }
-
-        if (result)
+                TRACE("arith", tout << "m_assume_eq_candidates.size() = " << m_assume_eq_candidates.size() << "\n";
+                      tout << "m_var_value_table.size() = " << m_var_value_table.size() << "\n";);
+        exit(0);
+        if (result) {
             get_context().push_trail(restore_size_trail<context, std::pair<theory_var, theory_var>, false>(m_assume_eq_candidates, old_sz));
+        }
+       
         return delayed_assume_eqs();
     }
 

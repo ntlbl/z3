@@ -1586,6 +1586,7 @@ public:
     }
 
     bool assume_eqs() {        
+        enable_trace("arith");
         svector<lpvar> vars;
         m_model_eqs.reset();
         m_tmp_var_set.clear();
@@ -1639,6 +1640,7 @@ public:
         unsigned old_sz = m_assume_eq_candidates.size();
         unsigned num_candidates = 0;
         int start = ctx().get_random_value();
+        start = 0;
         for (theory_var i = 0; i < sz; ++i) {
             theory_var v = (i + start) % sz;
             enode* n1 = get_enode(v);
@@ -1655,18 +1657,26 @@ public:
             }
             enode* n2 = get_enode(other);
             if (n1->get_root() != n2->get_root()) {
-                TRACE("arith", tout << mk_pp(n1->get_owner(), m) << " = " << mk_pp(n2->get_owner(), m) << "\n";
-                      tout << mk_pp(n1->get_owner(), m) << " = " << mk_pp(n2->get_owner(), m) << "\n";
-                      tout << "v" << v << " = " << "v" << other << "\n";);
-                m_assume_eq_candidates.push_back(std::make_pair(v, other));
+                TRACE("arith", tout << "different roots\n";// mk_pp(n1->get_owner(), m) << " = " << mk_pp(n2->get_owner(), m) << "\n";
+                      // tout << mk_pp(n1->get_owner(), m) << " = " << mk_pp(n2->get_owner(), m) << "\n";
+                      // tout << "v" << v << " = " << "v" << other << "\n";
+                      );
+                m_assume_eq_candidates.push_back(std::make_pair(other, v));
                 num_candidates++;
+            } else {
+                TRACE("arith", tout << "same roots\n";);
             }
         }
+
+        TRACE("arith", tout << "m_assume_eq_candidates.size() = " << m_assume_eq_candidates.size() << "\n";
+              tout << "m_model_eqs.size() = " << m_model_eqs.size() << "\n";);
             
         if (num_candidates > 0) {
             ctx().push_trail(restore_size_trail<context, std::pair<theory_var, theory_var>, false>(m_assume_eq_candidates, old_sz));
         }
 
+        exit(0);
+        
         return delayed_assume_eqs();
     }
 
